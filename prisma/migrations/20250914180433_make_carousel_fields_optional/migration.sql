@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "carousel_items" ALTER COLUMN "title" DROP NOT NULL,
+ALTER COLUMN "subtitle" DROP NOT NULL,
+ALTER COLUMN "date" DROP NOT NULL,
+ALTER COLUMN "description" DROP NOT NULL;

@@ -1,0 +1,13 @@
+diff --git a/node_modules/@pixi/react/lib/helpers/unmountRoot.mjs b/node_modules/@pixi/react/lib/helpers/unmountRoot.mjs
+index 1b37917..e4143f1 100644
+--- a/node_modules/@pixi/react/lib/helpers/unmountRoot.mjs
++++ b/node_modules/@pixi/react/lib/helpers/unmountRoot.mjs
+@@ -9,7 +9,7 @@ function unmountRoot(root) {
+   if (fiber) {
+     reconciler.updateContainer(null, fiber, null, () => {
+       if (root.applicationState.app) {
+-        root.applicationState.app.destroy();
++        root.applicationState.app.destroy({ releaseGlobalResources: true, removeView: true }, { children: true, texture: true, context: true });
+       }
+       roots.delete(root.internalState.canvas);
+     });

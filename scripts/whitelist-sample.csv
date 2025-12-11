@@ -1,0 +1,23 @@
+# Whitelist entries file
+# Format: email,twitterId
+# Lines starting with # are comments and will be ignored
+# Empty lines are ignored
+
+# Example entries:
+john@example.com,123456789
+jane@example.com,
+,987654321
+admin@company.com,555666777
+
+# You can have entries with just email, just Twitter ID, or both
+
+# Separate list examples for batch mode:
+# Save as scripts/whitelist-emails.txt
+# john@example.com
+# jane@example.com
+# admin@company.com
+
+# Save as scripts/whitelist-twitter-ids.txt
+# 123456789
+# 987654321
+# 555666777

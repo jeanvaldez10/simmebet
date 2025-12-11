@@ -1,0 +1,1161 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model MarketProfits {
+  id        String   @id @default(uuid())
+  userId    String
+  marketId  String
+  amount    Decimal  @default(0) @db.Decimal(10, 2)
+  side      Boolean
+  belief    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("market_profits")
+}
+
+model FlexSnapshot {
+  id                  String   @id @default(uuid())
+  userId              String
+  type                String
+  username            String
+  profitLoss          Decimal  @db.Decimal(10, 2)
+  volumeTraded        Decimal  @db.Decimal(10, 2)
+  balance             Decimal  @db.Decimal(10, 2)
+  createdAt           DateTime @default(now()) @map("created_at")
+  amountWon           Decimal? @db.Decimal(10, 2)
+  beliefPercentage    Decimal? @db.Decimal(5, 2)
+  betAmount           Decimal? @db.Decimal(10, 2)
+  betData             Json?
+  betSide             String?
+  betStatus           String?
+  marketId            String?
+  marketQuestion      String?
+  marketImage         String?
+  potentialLossAmount Decimal? @db.Decimal(10, 2)
+  potentialWinAmount  Decimal? @db.Decimal(10, 2)
+  avatar              String?
+  user                User     @relation(fields: [userId], references: [id])
+
+  @@map("flex_snapshots")
+}
+
+model User {
+  id                    String               @id @default(uuid())
+  email                 String?              @unique
+  username              String?              @unique
+  name                  String?
+  avatar                String?
+  supabaseUserId        String?
+  twitterId             String?              @unique
+  walletAddress         String?
+  walletType            String?
+  contractAddress       String?              @unique
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  isProfileComplete     Boolean              @default(false) @map("is_profile_complete")
+  discord               String?
+  facebook              String?
+  telegram              String?
+  authenticatedType     AuthenticatedType    @default(manual)
+  password              String?
+  emailVerified         DateTime?
+  image                 String?
+  verificationString    String?
+  recoveryCode          String?
+  xAccount              String?
+  linkingSession        Boolean              @default(false)
+  linkingSessionExpires DateTime?
+  passwordResetExpires  DateTime?
+  passwordResetToken    String?
+  is_admin              Boolean              @default(false)
+  accounts              Account[]
+  Authenticator         Authenticator[]
+  marketActivities      MarketActivity[]
+  sessions              Session[]
+  balanceChanges        BalanceChange[]
+  betRequests           BetRequest[]
+  blackjackGames        BlackjackGame[]
+  coinflipGames         CoinflipGame[]
+  flexSnapshots         FlexSnapshot[]
+  liquidityPositions    LiquidityPositions[]
+  marketProfits         MarketProfits[]
+  optionExercises       OptionExercise[]
+  optionHoldings        OptionHolding[]
+  optionListings        OptionListing[]
+  optionPurchases       OptionSale[]         @relation("OptionPurchases")
+  optionSales           OptionSale[]         @relation("OptionSales")
+  options               Option[]
+  activities            UserActivity[]
+  approvals             UserApproval[]
+  balance               UserBalance?
+  notifications         UserNotification[]
+  positions             UserPosition[]
+  watchlistItems        WatchlistItem[]
+
+  // referral system
+  referrals            UserReferral[] @relation("ReferredByUser")
+  myReferralRecord     UserReferral?  @relation("UserReferralRecord")
+  referralStats        ReferralStats?
+  hasReceivedBonus     Boolean        @default(false)
+  referralBonusApplied DateTime?
+
+  @@map("users")
+}
+
+model UserApproval {
+  id              String   @id @default(uuid())
+  userId          String
+  contractAddress String
+  spenderAddress  String
+  tokenAddress    String?
+  amount          String?
+  isApproved      Boolean  @default(false)
+  approvalHash    String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contractAddress, spenderAddress, tokenAddress])
+  @@map("user_approvals")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+model MarketCategory {
+  id                String                     @id @default(uuid())
+  name              String                     @unique
+  description       String?
+  icon              String?
+  isActive          Boolean                    @default(true)
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+  marketAssignments MarketCategoryAssignment[]
+
+  @@map("market_categories")
+}
+
+model MarketCategoryAssignment {
+  id         String         @id @default(uuid())
+  marketId   String
+  categoryId String
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  category   MarketCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  market     Market         @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([marketId, categoryId])
+  @@map("market_category_assignments")
+}
+
+model Market {
+  id                  String                     @id @default(uuid())
+  contractAddress     String                     @unique
+  poolAddress         String                     @unique
+  blockchain          String                     @default("ETH")
+  status              MarketStatus               @default(ACTIVE)
+  name                String
+  question            String
+  date                DateTime?
+  image               String?
+  volume              Float                      @default(0)
+  createdBy           String
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  rules               String[]
+  isResolved          Boolean                    @default(false)
+  resolvedOption      String?
+  yesPrice            Float                      @default(50)
+  noPrice             Float                      @default(50)
+  totalLiquidity      Float                      @default(0)
+  yesTokenAddress     String?                    @unique
+  yesIcon             String?
+  noTokenAddress      String?                    @unique
+  noIcon              String?
+  currentRatio        Decimal?                   @db.Decimal(10, 2)
+  oracleMarketId      String?
+  oracleType          String?
+  tieIsPossible       Boolean                    @default(false)
+  noSideIcon          String?                    @default("/images/cup.png")
+  noSideName          String?                    @default("No")
+  yesSideIcon         String?                    @default("/images/cup.png")
+  yesSideName         String?                    @default("Yes")
+  creatorAvatar       String?                    @default("/images/avatar.png")
+  creatorName         String?                    @default("Anonymous")
+  resolvedTime        DateTime?
+  noSideSymbol        String?
+  yesSideSymbol       String?
+  imageSquare         String?
+  socialImage         String?
+  orderIndex          Int                        @default(0)
+  resolutionEvidence  String?
+  isTie               Boolean?
+  activities          MarketActivity[]
+  balanceChanges      BalanceChange[]
+  betRequests         BetRequest[]
+  formattedSwaps      FormattedSwap[]
+  liquidityPositions  LiquidityPositions[]
+  liquiditySpreadData LiquiditySpreadData[]
+  categoryAssignments MarketCategoryAssignment[]
+  currentOdds         MarketCurrentOdds?
+  marketData          MarketData[]
+  marketProfits       MarketProfits[]
+  resolution          MarketResolution?
+  swaps               MarketSwap[]
+  topHolders          MarketTopHolder[]
+  tweets              MarketTweet[]
+  priceChartData      PriceChartData[]
+  notifications       UserNotification[]
+  positions           UserPosition[]
+
+  @@map("markets")
+}
+
+model MarketTopHolder {
+  id        String   @id @default(uuid())
+  marketId  String
+  holderId  String
+  side      Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  address   String   @default("unknown")
+  userName  String?  @default("Anonymous")
+  amount    Decimal  @default(0)
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@map("market_top_holders")
+}
+
+model MarketResolution {
+  id         String   @id @default(uuid())
+  marketId   String   @unique
+  timestamp  DateTime @default(now())
+  results    Json
+  outcome    Boolean
+  sources    String[]
+  resultFile String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  market     Market   @relation(fields: [marketId], references: [id])
+
+  @@map("market_resolutions")
+}
+
+model MarketActivity {
+  id        String   @id @default(cuid())
+  marketId  String
+  userId    String?
+  type      String
+  amount    Decimal
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([marketId])
+  @@index([userId])
+}
+
+model MarketTweet {
+  id         String   @id @default(uuid())
+  marketId   String
+  tweets     Json
+  username   String
+  handle     String
+  profileImg String
+  content    String
+  tweetUrl   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  market     Market   @relation(fields: [marketId], references: [id])
+
+  @@map("market_tweets")
+}
+
+model MarketData {
+  id        String   @id @default(uuid())
+  marketId  String
+  timestamp DateTime
+  dataType  DataType
+  side      Boolean
+  odds      Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@index([marketId, timestamp])
+  @@map("market_data")
+}
+
+model MarketCurrentOdds {
+  id        String   @id @default(uuid())
+  marketId  String   @unique
+  yesOdds   Decimal  @db.Decimal(10, 2)
+  noOdds    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@map("market_current_odds")
+}
+
+model UserPosition {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float
+  bought    Boolean  @default(true)
+  profit    Float
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  marketId  String
+  txHash    String?
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, marketId, txHash])
+  @@map("user_positions")
+}
+
+model UserNotification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  amount    String
+  marketId  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  message   String?
+  status    String?
+  viewed    Boolean  @default(false)
+  market    Market?  @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_notifications")
+}
+
+model UserActivity {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   Json
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_activities")
+}
+
+model UserBalance {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_balances")
+}
+
+model PriceChartData {
+  id        String   @id @default(uuid())
+  marketId  String
+  date      DateTime
+  yes       Decimal  @db.Decimal(10, 2)
+  no        Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@index([marketId, date])
+  @@map("price_chart_data")
+}
+
+model LiquiditySpreadData {
+  id         String   @id @default(uuid())
+  marketId   String
+  value      Int
+  percentage Decimal  @db.Decimal(10, 2)
+  type       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  market     Market   @relation(fields: [marketId], references: [id])
+
+  @@index([marketId])
+  @@map("liquidity_spread_data")
+}
+
+model BetRequest {
+  id             String   @id @default(uuid())
+  userId         String
+  marketId       String
+  type           String
+  amountIn       Float
+  slippage       Float
+  errorMessage   String?
+  idempotencyKey String   @unique
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  market         Market   @relation(fields: [marketId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@map("bet_requests")
+}
+
+model IndexerState {
+  id              String   @id
+  lastBlockNumber BigInt
+  chainId         Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("indexer_state")
+}
+
+model MarketSwap {
+  id                 String    @id @default(uuid())
+  swapId             String
+  marketId           String
+  blockNumber        String
+  amount0            String
+  amount1            String
+  sender             String
+  txHash             String    @unique
+  blockHash          String
+  poolManagerAddress String
+  txIndex            Int
+  logIndex           Int       @unique
+  eventName          String
+  liquidity          String
+  fee                Int
+  tick               Int
+  sqrtPriceX96       String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime? @updatedAt
+  market             Market    @relation(fields: [marketId], references: [id])
+
+  @@index([txHash, swapId, blockNumber, sender])
+  @@map("market_swaps")
+}
+
+model FormattedSwap {
+  id        String   @id @default(uuid())
+  marketId  String
+  timestamp DateTime
+  txHash    String   @unique
+  rawPrice  Float
+  price     Float
+  volume    Float
+  amount0   Float
+  amount1   Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@map("formatted_swaps")
+}
+
+model TokenTransfers {
+  id              String  @id @default(uuid())
+  chainId         Int
+  fromAddress     String
+  toAddress       String
+  amount          Decimal @db.Decimal(78, 0)
+  transactionHash String
+  logIndex        Int
+  blockNumber     BigInt
+  blockHash       String
+  tokenAddress    String
+
+  @@unique([transactionHash, blockNumber, logIndex])
+  @@map("token_transfers")
+}
+
+model BlockData {
+  id          String   @id @default(uuid())
+  chainId     Int
+  blockNumber BigInt
+  blockHash   String
+  timestamp   DateTime
+
+  @@map("block_data")
+}
+
+model LiquidityEvent {
+  id                 String   @id @default(uuid())
+  txHash             String
+  blockHash          String
+  blockNumber        BigInt
+  poolManagerAddress String
+  txIndex            Int
+  logIndex           Int
+  eventName          String
+  marketId           String?
+  poolKey            String
+  sender             String
+  tickLower          Int
+  tickUpper          Int
+  liquidityDelta     Decimal  @db.Decimal(78, 0)
+  salt               String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([txHash, blockNumber, logIndex])
+  @@map("liquidity_events")
+}
+
+model WatchlistItem {
+  id        String            @id @default(uuid())
+  userId    String
+  itemId    String
+  itemType  WatchlistItemType
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId, itemType])
+  @@index([userId])
+  @@index([itemId, itemType])
+  @@map("watchlist_items")
+}
+
+model LiquidityPositions {
+  id                  String    @id @default(uuid())
+  userId              String
+  marketId            String
+  nftId               String?
+  isBurnt             Boolean   @default(false)
+  autoclose           Boolean   @default(false)
+  autocloseTime       DateTime?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  token0FeesCollected Decimal   @default(0) @db.Decimal(10, 2)
+  token1FeesCollected Decimal   @default(0) @db.Decimal(10, 2)
+  lastUpdated         DateTime? @default(now()) @map("last_updated")
+  lowerOdds           Decimal?  @db.Decimal(5, 2)
+  token0Balance       Decimal?  @db.Decimal(10, 2)
+  token1Balance       Decimal?  @db.Decimal(10, 2)
+  upperOdds           Decimal?  @db.Decimal(5, 2)
+  market              Market    @relation(fields: [marketId], references: [id])
+  user                User      @relation(fields: [userId], references: [id])
+
+  @@map("liquidity_positions")
+}
+
+model whitelist_entries {
+  id              String   @id
+  email           String?  @unique
+  twitterId       String?  @unique
+  isActive        Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime
+  twitterUsername String?
+}
+
+model CarouselItem {
+  id                  String            @id @default(uuid())
+  title               String?
+  subtitle            String?
+  date                String?
+  betChance           Int?
+  description         String?
+  imageSrc            String
+  marketId            String?
+  useSocialImage      Boolean           @default(false)
+  alignment           CarouselAlignment @default(LEFT)
+  isVideo             Boolean           @default(false)
+  primaryButtonText   String?
+  primaryButtonLink   String?
+  secondaryButtonText String?
+  secondaryButtonLink String?
+  status              CarouselStatus    @default(DRAFT)
+  orderIndex          Int               @default(0)
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  mobileBannerSrc     String?
+
+  @@map("carousel_items")
+}
+
+model BalanceChange {
+  id           String   @id @default(uuid())
+  userId       String
+  marketId     String?
+  tokenAddress String
+  amount       Decimal  @db.Decimal(78, 0)
+  txHash       String
+  chainId      Int
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  usdValue     Decimal? @db.Decimal(10, 2)
+  market       Market?  @relation(fields: [marketId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("balance_changes")
+}
+
+model OptionAsset {
+  id              String     @id @default(uuid())
+  name            String
+  symbol          String     @unique
+  tokenAddress    String     @unique
+  chainId         Int
+  decimals        Int        @default(18)
+  icon            String?
+  isActive        Boolean    @default(true)
+  amountPerOption Decimal    @db.Decimal(18, 8)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  chartUrl        String?
+  optionType      OptionType @default(LONG)
+  strikePrice     Decimal?   @db.Decimal(18, 8)
+
+  @@map("option_assets")
+}
+
+model Option {
+  id               String           @id @default(uuid())
+  userId           String?
+  optionKey        String
+  txHash           String
+  size             Int
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  optionId         Int
+  expiry           String
+  listedOnCreation Boolean          @default(false)
+  optionType       Int
+  quoteToken       String
+  strikePrice      String
+  underlyingToken  String
+  makerAddress     String
+  exercises        OptionExercise[]
+  holdings         OptionHolding[]
+  listings         OptionListing[]
+  sales            OptionSale[]     @relation("OptionSales")
+  user             User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("options")
+}
+
+model OptionHolding {
+  id            String     @id @default(uuid())
+  optionId      String
+  userId        String?
+  amount        Int
+  role          HolderRole
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  walletAddress String
+  option        Option     @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user          User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, walletAddress, role])
+  @@map("option_holdings")
+}
+
+model OptionListing {
+  id             String        @id @default(uuid())
+  optionId       String
+  userId         String?
+  amount         Int
+  pricePerOption String
+  status         ListingStatus @default(ACTIVE)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  sellerAddress  String
+  orderId        String?
+  option         Option        @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sales          OptionSale[]
+
+  @@map("option_listings")
+}
+
+model OptionSale {
+  id             String        @id @default(uuid())
+  optionId       String
+  listingId      String
+  sellerId       String?
+  buyerId        String?
+  amount         Int
+  pricePerOption String
+  totalPrice     String
+  txHash         String
+  createdAt      DateTime      @default(now()) @map("created_at")
+  buyerAddress   String
+  sellerAddress  String
+  buyer          User?         @relation("OptionPurchases", fields: [buyerId], references: [id], onDelete: Cascade)
+  listing        OptionListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  option         Option        @relation("OptionSales", fields: [optionId], references: [id], onDelete: Cascade)
+  seller         User?         @relation("OptionSales", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("option_sales")
+}
+
+model OptionExercise {
+  id            String   @id @default(uuid())
+  optionId      String
+  userId        String?
+  walletAddress String
+  amount        Int
+  strikePrice   String
+  totalPayment  String
+  paymentToken  String
+  payoutToken   String
+  txHash        String
+  createdAt     DateTime @default(now()) @map("created_at")
+  option        Option   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id])
+
+  @@index([optionId])
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("option_exercises")
+}
+
+model OrderBook {
+  id        String           @id @default(uuid())
+  optionKey String           @unique
+  optionId  String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  asks      OrderBookAsk[]
+  bids      OrderBookBid[]
+  events    OrderBookEvent[]
+
+  @@map("order_books")
+}
+
+model OrderBookBid {
+  id              String      @id @default(uuid())
+  orderBookId     String
+  orderId         String      @unique
+  optionKey       String
+  maker           String
+  price           String
+  amount          String
+  filledAmount    String      @default("0")
+  remainingAmount String
+  status          OrderStatus @default(ACTIVE)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  lastUpdatedAt   DateTime    @default(now()) @map("last_updated_at")
+  orderBook       OrderBook   @relation(fields: [orderBookId], references: [id], onDelete: Cascade)
+
+  @@index([optionKey, price])
+  @@index([maker])
+  @@index([status])
+  @@map("order_book_bids")
+}
+
+model OrderBookAsk {
+  id              String      @id @default(uuid())
+  orderBookId     String
+  orderId         String      @unique
+  optionKey       String
+  maker           String
+  price           String
+  amount          String
+  filledAmount    String      @default("0")
+  remainingAmount String
+  status          OrderStatus @default(ACTIVE)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  lastUpdatedAt   DateTime    @default(now()) @map("last_updated_at")
+  orderBook       OrderBook   @relation(fields: [orderBookId], references: [id], onDelete: Cascade)
+
+  @@index([optionKey, price])
+  @@index([maker])
+  @@index([status])
+  @@map("order_book_asks")
+}
+
+model OrderBookEvent {
+  id              String    @id @default(uuid())
+  orderBookId     String
+  orderId         String?
+  eventType       String
+  maker           String?
+  optionKey       String
+  price           String?
+  amount          String?
+  filledAmount    String?
+  remainingAmount String?
+  txHash          String
+  blockNumber     BigInt
+  logIndex        Int
+  createdAt       DateTime  @default(now()) @map("created_at")
+  orderBook       OrderBook @relation(fields: [orderBookId], references: [id], onDelete: Cascade)
+
+  @@unique([txHash, blockNumber, logIndex, eventType])
+  @@index([optionKey, eventType])
+  @@index([txHash, blockNumber, logIndex])
+  @@map("order_book_events")
+}
+
+model BlackjackGame {
+  id                                 String                @id @default(cuid())
+  userId                             String                @map("user_id")
+  shuffleId                          String                @map("shuffle_id")
+  shuffleSalt                        String?               @map("shuffle_salt")
+  dealtCardCount                     Int                   @default(0) @map("dealt_card_count")
+  gamePhase                          String                @default("betting") @map("game_phase")
+  pendingBet                         String                @default("0") @map("pending_bet")
+  initialBet                         String                @default("0") @map("initial_bet")
+  totalWagered                       String                @default("0") @map("total_wagered")
+  insuranceBet                       String                @default("0") @map("insurance_bet")
+  message                            String                @default("")
+  canDouble                          Boolean               @default(false) @map("can_double")
+  canSplit                           Boolean               @default(false) @map("can_split")
+  canSurrender                       Boolean               @default(false) @map("can_surrender")
+  insuranceOffered                   Boolean               @default(false) @map("insurance_offered")
+  insuranceWasOffered                Boolean               @default(false) @map("insurance_was_offered")
+  dealerHasBlackjack                 Boolean               @default(false) @map("dealer_has_blackjack")
+  dealingStep                        Int                   @default(0) @map("dealing_step")
+  isDealing                          Boolean               @default(false) @map("is_dealing")
+  isDealingInProgress                Boolean               @default(false) @map("is_dealing_in_progress")
+  lastProcessedStep                  Int                   @default(0) @map("last_processed_step")
+  dealerDealingStep                  Int                   @default(0) @map("dealer_dealing_step")
+  isDealerDealing                    Boolean               @default(false) @map("is_dealer_dealing")
+  result                             String?
+  totalPayout                        String                @default("0") @map("total_payout")
+  pairBet                            String                @default("0") @map("pair_bet")
+  twentyOnePlusThreeBet              String                @default("0") @map("twenty_one_plus_three_bet")
+  pairBetChips                       Json?                 @map("pair_bet_chips")
+  twentyOnePlusThreeBetChips         Json?                 @map("twenty_one_plus_three_bet_chips")
+  sidebetResults                     Json?                 @map("sidebet_results")
+  originalPairBet                    String                @default("0") @map("original_pair_bet")
+  originalTwentyOnePlusThreeBet      String                @default("0") @map("original_twenty_one_plus_three_bet")
+  originalPairBetChips               Json?                 @map("original_pair_bet_chips")
+  originalTwentyOnePlusThreeBetChips Json?                 @map("original_twenty_one_plus_three_bet_chips")
+  createdAt                          DateTime              @default(now()) @map("created_at")
+  updatedAt                          DateTime              @updatedAt @map("updated_at")
+  completedAt                        DateTime?             @map("completed_at")
+  dealerHand                         BlackjackDealerHand?
+  gameActions                        BlackjackGameAction[]
+  user                               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerHands                        BlackjackPlayerHand[]
+
+  @@map("blackjack_games")
+}
+
+model BlackjackPlayerHand {
+  id            String          @id @default(cuid())
+  gameId        String          @map("game_id")
+  handIndex     Int             @map("hand_index")
+  bet           String          @default("0")
+  isStanding    Boolean         @default(false) @map("is_standing")
+  isBusted      Boolean         @default(false) @map("is_busted")
+  isBlackjack   Boolean         @default(false) @map("is_blackjack")
+  isDoubled     Boolean         @default(false) @map("is_doubled")
+  isSurrendered Boolean         @default(false) @map("is_surrendered")
+  isFromSplit   Boolean         @default(false) @map("is_from_split")
+  isSplitAces   Boolean         @default(false) @map("is_split_aces")
+  result        String?
+  payout        String          @default("0")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  cards         BlackjackCard[]
+  game          BlackjackGame   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, handIndex])
+  @@map("blackjack_player_hands")
+}
+
+model BlackjackDealerHand {
+  id           String          @id @default(cuid())
+  gameId       String          @unique @map("game_id")
+  isStanding   Boolean         @default(false) @map("is_standing")
+  isBusted     Boolean         @default(false) @map("is_busted")
+  isBlackjack  Boolean         @default(false) @map("is_blackjack")
+  showAllCards Boolean         @default(false) @map("show_all_cards")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  cards        BlackjackCard[]
+  game         BlackjackGame   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("blackjack_dealer_hands")
+}
+
+model BlackjackCard {
+  id           String               @id @default(cuid())
+  handId       String               @map("hand_id")
+  handType     String               @map("hand_type")
+  suit         String
+  rank         String
+  isHidden     Boolean              @default(false) @map("is_hidden")
+  dealtAt      DateTime             @default(now()) @map("dealt_at")
+  playerHandId String?              @map("player_hand_id")
+  dealerHandId String?              @map("dealer_hand_id")
+  dealerHand   BlackjackDealerHand? @relation(fields: [dealerHandId], references: [id], onDelete: Cascade)
+  playerHand   BlackjackPlayerHand? @relation(fields: [playerHandId], references: [id], onDelete: Cascade)
+
+  @@map("blackjack_cards")
+}
+
+model BlackjackGameAction {
+  id              String                  @id @default(cuid())
+  gameId          String                  @map("game_id")
+  actionType      BlackjackGameActionType @map("action_type")
+  handIndex       Int?                    @map("hand_index")
+  amount          String?
+  description     String
+  gameStateBefore String?                 @map("game_state_before")
+  gameStateAfter  String?                 @map("game_state_after")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  game            BlackjackGame           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("blackjack_game_actions")
+}
+
+model CoinflipGame {
+  id                String               @id @default(cuid())
+  userId            String               @map("user_id")
+  status            CoinflipGameStatus   @default(BETTING)
+  betAmount         String               @default("0") @map("bet_amount")
+  betSide           CoinflipSide?        @map("bet_side")
+  winningSide       CoinflipSide?        @map("winning_side")
+  payout            String               @default("0")
+  result            String?
+  previousBetAmount String?              @map("previous_bet_amount")
+  previousSide      CoinflipSide?        @map("previous_side")
+  gameMode          String                @default("FREE_PLAY") @map("game_mode")
+  serverSeed        String                @map("server_seed")
+  serverSeedHash    String               @map("server_seed_hash")
+  clientSeed        String?              @map("client_seed")
+  nonce             Int                  @default(0)
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  completedAt       DateTime?            @map("completed_at")
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameActions       CoinflipGameAction[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@map("coinflip_games")
+}
+
+model CoinflipGameAction {
+  id              String             @id @default(cuid())
+  gameId          String             @map("game_id")
+  actionType      CoinflipActionType @map("action_type")
+  amount          String?
+  side            CoinflipSide?
+  description     String
+  gameStateBefore String?            @map("game_state_before")
+  gameStateAfter  String?            @map("game_state_after")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  game            CoinflipGame       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("coinflip_game_actions")
+}
+
+enum CoinflipGameStatus {
+  BETTING
+  BET_PLACED
+  FLIPPING
+  FINISHED
+  ERROR
+}
+
+enum CoinflipSide {
+  HEADS
+  TAILS
+}
+
+enum CoinflipActionType {
+  SELECT_SIDE
+  PLACE_BET
+  FLIP
+  PLAY_AGAIN
+  RESET_GAME
+  CANCEL_BET
+  CLEAR
+  DOUBLE
+}
+
+enum AuthenticatedType {
+  manual
+  social
+}
+
+enum WatchlistItemType {
+  MARKET
+  OPTION
+}
+
+enum MarketStatus {
+  ACTIVE
+  RESOLVED
+}
+
+enum BetType {
+  PLACE_BET_YES
+  PLACE_BET_NO
+  CASH_OUT
+}
+
+enum DataType {
+  HOURLY
+  DAILY
+}
+
+enum CarouselAlignment {
+  LEFT
+  CENTER
+}
+
+enum CarouselStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OptionType {
+  LONG
+  SHORT
+}
+
+enum HolderRole {
+  MAKER_TAKER
+  MAKER_ONLY
+  TAKER_ONLY
+}
+
+enum ListingStatus {
+  ACTIVE
+  PARTIALLY_SOLD
+  SOLD
+  CANCELLED
+}
+
+enum OrderStatus {
+  ACTIVE
+  FILLED
+  PARTIALLY_FILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum OrderSide {
+  BID
+  ASK
+}
+
+enum BlackjackGameActionType {
+  PLACE_BET
+  START_ROUND
+  HIT
+  STAND
+  DOUBLE
+  SPLIT
+  SURRENDER
+  INSURANCE
+  DECLINE_INSURANCE
+  PLAY_AGAIN
+  START_NEW_GAME
+  RESET_GAME
+  SWITCH_HAND
+}
+
+/**
+ * ********************
+ * Referral System    *
+ * ********************
+ */
+
+model UserReferral {
+  id           String   @id @default(uuid())
+  userId       String   @unique // The user who was referred
+  referredBy   String // Username or code of referrer
+  referredById String // User ID of referrer
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user     User @relation("UserReferralRecord", fields: [userId], references: [id], onDelete: Cascade)
+  referrer User @relation("ReferredByUser", fields: [referredById], references: [id], onDelete: Cascade)
+
+  @@index([referredById])
+  @@index([referredBy])
+  @@map("user_referrals")
+}
+
+model ReferralStats {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  totalReferrals      Int      @default(0)
+  activeReferrals     Int      @default(0)
+  layer1Volume        Decimal  @default(0) @db.Decimal(18, 2)
+  layer2Volume        Decimal  @default(0) @db.Decimal(18, 2)
+  layer1Points        Decimal  @default(0) @db.Decimal(18, 2)
+  layer2Points        Decimal  @default(0) @db.Decimal(18, 2)
+  totalReferralPoints Decimal  @default(0) @db.Decimal(18, 2)
+  lastCalculated      DateTime @default(now()) @map("last_calculated")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("referral_stats")
+}

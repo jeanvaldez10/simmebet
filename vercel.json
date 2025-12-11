@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/index-markets",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/update-nft-positions",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

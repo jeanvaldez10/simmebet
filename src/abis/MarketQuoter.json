@@ -1,0 +1,42 @@
+{
+  "abi": [{
+    "type": "function",
+    "name": "estimateMintAndSwapToPrice",
+    "inputs": [
+      {
+        "name": "market",
+        "type": "address",
+        "internalType": "contract IConditionalTokenMarket"
+      },
+      {
+        "name": "amountIn",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "targetPriceX96",
+        "type": "uint160",
+        "internalType": "uint160"
+      },
+      {
+        "name": "hookData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "currency0Balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "currency1Balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "payable"
+  }],
+  "address": "0xB5870684D23D23e9D571d63e1aAcD604E9f8615A"
+}

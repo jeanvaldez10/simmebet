@@ -1,0 +1,21 @@
+# Example crontab entries for updating total liquidity and NFT positions
+# 
+# To add these to your crontab, run: crontab -e
+# Then add one of the following lines:
+
+# Update all markets every 5 minutes
+*/5 * * * * cd /Users/robertkelly/workspace/simmibets && node scripts/update-total-liquidity.js >> /var/log/total-liquidity.log 2>&1
+
+# Update NFT positions every 5 minutes (same as market updates)
+*/5 * * * * cd /Users/robertkelly/workspace/simmibets && node scripts/update-nft-positions.js >> /var/log/nft-positions.log 2>&1
+
+# Update all markets every 10 minutes (less frequent)
+*/10 * * * * cd /Users/robertkelly/workspace/simmibets && node scripts/update-total-liquidity.js >> /var/log/total-liquidity.log 2>&1
+
+# Update all markets every hour (for testing)
+0 * * * * cd /Users/robertkelly/workspace/simmibets && node scripts/update-total-liquidity.js >> /var/log/total-liquidity.log 2>&1
+
+# Manual execution examples:
+# Update all markets: node scripts/update-total-liquidity.js
+# Update specific market: node scripts/update-total-liquidity.js --market-id <marketId>
+# Update NFT positions: node scripts/update-nft-positions.js

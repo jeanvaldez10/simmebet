@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Minecraft Font */
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/games/blackjack/assets/fonts/Minecraft.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fix Minecraft font bottom padding */
+.font-\[\'Minecraft\'\] span,
+.font-\[\'Minecraft\'\] button,
+.font-\[\'Minecraft\'\] div {
+  /* margin-bottom: -3px; */
+}
+
+/* Image rendering for pixel art */
+img {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Ensure html and body are full height */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+}
+
+/* Disable text selection and image dragging */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
+.scrollbar-hide::-webkit-scrollbar{
+  display: none;
+}
